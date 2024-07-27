@@ -28,6 +28,7 @@ internal static class Program
                             FacePersistenceFrameHandlerOptions.ConfigurationSection));
 
                 services.AddSingleton<FaceDetector>();
+                services.AddSingleton<FacePersistencePersistenceHandler>();
                 services.AddSingleton<IFrameHandler, FacePersistenceFrameHandler>();
                 services.AddSingleton<WebcamHandler>();
                 services.AddHostedService<WebcamHostedService>();

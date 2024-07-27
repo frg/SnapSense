@@ -12,6 +12,7 @@ public class FacePersistenceFrameHandler : IFrameHandler
 {
     private readonly ILogger<FacePersistenceFrameHandler> _logger;
     private readonly FaceDetector _faceDetector;
+    private readonly FacePersistencePersistenceHandler _persistenceHandler;
     private readonly IHostApplicationLifetime _hostApplicationLifetime;
 
     private readonly SemaphoreSlim _semaphore = new(1, 1);
@@ -21,11 +22,13 @@ public class FacePersistenceFrameHandler : IFrameHandler
         ILogger<FacePersistenceFrameHandler> logger,
         IOptions<FacePersistenceFrameHandlerOptions> options,
         FaceDetector faceDetector,
+        FacePersistencePersistenceHandler persistenceHandler,
         IHostApplicationLifetime hostApplicationLifetime)
     {
         _logger = logger;
         _options = options.Value;
         _faceDetector = faceDetector;
+        _persistenceHandler = persistenceHandler;
         _hostApplicationLifetime = hostApplicationLifetime;
     }
 
@@ -60,22 +63,14 @@ public class FacePersistenceFrameHandler : IFrameHandler
 
             if (_options.ShouldMarkFaces)
             {
-                using (var markedMat = _faceDetector.MarkFaces(frameMat, faces))
+                using (var markedFrameMat = _faceDetector.MarkFaces(frameMat, faces))
                 {
-                    // TODO: Make path configurable
-                    var path = $"photo__{DateTime.Now:yyyyMMdd_HHmmssffff}.jpg";
-                    markedMat.Save(path);
-
-                    _logger.LogInformation("Photo saved at {Path}.", path);
+                    _persistenceHandler.Save(markedFrameMat, _options.SavePath);
                 }
             }
             else
             {
-                // TODO: Make path configurable
-                var path = $"photo__{DateTime.Now:yyyyMMdd_HHmmssffff}.jpg";
-                frameMat.Save(path);
-
-                _logger.LogInformation("Photo saved at {Path}.", path);
+                _persistenceHandler.Save(frameMat, _options.SavePath);
             }
 
             _hostApplicationLifetime.StopApplication();
