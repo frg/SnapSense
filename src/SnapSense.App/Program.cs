@@ -30,6 +30,7 @@ internal static class Program
             .ConfigureLogging((_, logging) =>
             {
                 logging.ClearProviders();
+                logging.SetMinimumLevel(LogLevel.Debug);
                 logging.AddConsole();
             });
 }
