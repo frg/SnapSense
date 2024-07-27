@@ -23,7 +23,7 @@ public class FaceDetector
 
     public Rectangle[] LocateFaces(Mat frameMat)
     {
-        var grayFrame = new Mat();
+        using var grayFrame = new Mat();
         CvInvoke.CvtColor(frameMat, grayFrame, ColorConversion.Bgr2Gray);
         var faces = _faceCascade.DetectMultiScale(grayFrame, 1.1, 10, System.Drawing.Size.Empty);
 

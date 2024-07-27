@@ -33,13 +33,14 @@ public class FacePersistenceFrameHandler : IFrameHandler
         _logger.LogInformation("Found {FacesCount} face(s).", faces.Length);
         _logger.LogInformation("Marking face(s).");
 
-        var markedMat = _faceDetector.MarkFaces(frameMat, faces);
+            using (var markedMat = _faceDetector.MarkFaces(frameMat, faces))
+            {
+                // TODO: Make path configurable
+                var path = $"photo__{DateTime.Now:yyyyMMdd_HHmmssffff}.jpg";
+                markedMat.Save(path);
 
-        // TODO: Make path configurable
-        var path = $"photo__{DateTime.Now:yyyyMMdd_HHmmssffff}.jpg";
-        markedMat.Save(path);
-
-        _logger.LogInformation("Photo saved at {Path}.", path);
+                _logger.LogInformation("Photo saved at {Path}.", path);
+            }
 
         _hostApplicationLifetime.StopApplication();
     }
