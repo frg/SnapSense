@@ -33,6 +33,9 @@
       <None Update="opencv\data\dnn\res10_300x300_ssd_iter_140000_fp16.caffemodel">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
+      <None Update="appsettings.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>

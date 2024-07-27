@@ -20,8 +20,13 @@ internal static class Program
                 config.AddEnvironmentVariables();
                 config.AddCommandLine(args);
             })
-            .ConfigureServices((_, services) =>
+            .ConfigureServices((builderContext, services) =>
             {
+                services
+                    .Configure<FacePersistenceFrameHandlerOptions>(
+                        builderContext.Configuration.GetSection(
+                            FacePersistenceFrameHandlerOptions.ConfigurationSection));
+
                 services.AddSingleton<FaceDetector>();
                 services.AddSingleton<IFrameHandler, FacePersistenceFrameHandler>();
                 services.AddSingleton<WebcamHandler>();
