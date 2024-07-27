@@ -1,0 +1,6 @@
+﻿services:
+  snapsense:
+    image: snapsense
+    build:
+      context: .
+      dockerfile: SnapSense/Dockerfile

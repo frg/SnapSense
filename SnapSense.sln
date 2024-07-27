@@ -1,0 +1,30 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{693AC3C4-46CD-4970-9F29-A133D39E828F}"
+	ProjectSection(SolutionItems) = preProject
+		docker-compose.yml = docker-compose.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{00A672A6-022D-4D46-AAC8-17E12E1EC63F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{8CCF1087-63AE-4FFC-85BD-140BEECA37ED}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{BB603DF8-772C-461E-9189-40302C8917B8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SnapSense.App", "src\SnapSense.App\SnapSense.App.csproj", "{1B073633-0C4C-4600-AD6C-89D737F5919C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1B073633-0C4C-4600-AD6C-89D737F5919C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1B073633-0C4C-4600-AD6C-89D737F5919C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1B073633-0C4C-4600-AD6C-89D737F5919C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1B073633-0C4C-4600-AD6C-89D737F5919C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1B073633-0C4C-4600-AD6C-89D737F5919C} = {00A672A6-022D-4D46-AAC8-17E12E1EC63F}
+	EndGlobalSection
+EndGlobal
