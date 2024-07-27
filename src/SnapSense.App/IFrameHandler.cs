@@ -1,11 +1,11 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using System.Drawing;
+using Emgu.CV;
 
 namespace SnapSense;
 
 public interface IFrameHandler
 {
-    public void HandleFrame(Bitmap bitmap);
+    public void HandleFrame(Mat frameMat);
 }

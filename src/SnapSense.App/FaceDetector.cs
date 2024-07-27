@@ -1,68 +1,60 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using System.Numerics;
-using FaceAiSharp;
+using Emgu.CV;
+using Emgu.CV.CvEnum;
+using Emgu.CV.Structure;
 using Microsoft.Extensions.Logging;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Drawing.Processing;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
+using Rectangle = System.Drawing.Rectangle;
 
 namespace SnapSense;
 
 public class FaceDetector
 {
     private readonly ILogger<FaceDetector> _logger;
-    private readonly IFaceDetector _detector = FaceAiSharpBundleFactory.CreateFaceDetector();
-    private readonly IFaceDetectorWithLandmarks _detectorWithLandmarks = FaceAiSharpBundleFactory.CreateFaceDetectorWithLandmarks();
+
+    private CascadeClassifier _faceCascade;
 
     public FaceDetector(ILogger<FaceDetector> logger)
     {
         _logger = logger;
+        _faceCascade = new CascadeClassifier("opencv/data/haarcascades/haarcascade_frontalface_default.xml");
     }
 
-    public bool HasAnyFace(Image<Rgb24> image, float confidenceThreshold = 1.45F)
+    public Rectangle[] LocateFaces(Mat frameMat)
     {
-        var faces = _detector.DetectFaces(image);
-        var hasAnyFace = faces.Any(result => (result.Confidence ?? 0) > confidenceThreshold);
+        var grayFrame = new Mat();
+        CvInvoke.CvtColor(frameMat, grayFrame, ColorConversion.Bgr2Gray);
+        var faces = _faceCascade.DetectMultiScale(grayFrame, 1.1, 10, System.Drawing.Size.Empty);
 
-        if (hasAnyFace)
-        {
-            _logger.LogInformation("Found at least one face which meets confidence criteria.");
-        }
-
-        return hasAnyFace;
+        return faces;
     }
 
-    public Image<T> MarkFaces<T>(Image<T> image) where T : unmanaged, IPixel<T>
+    public Mat MarkFaces(Mat frameMat, Rectangle[] faces)
     {
-        var clonedImage = image.CloneAs<Rgb24>();
-        var faces = _detectorWithLandmarks.DetectFaces(clonedImage);
-
-        _logger.LogInformation("Found {FaceCount} faces, with confidence {FaceConfidences} respectively.", faces.Count, faces.Select(x => x.Confidence));
-
-        var font = SixLabors.Fonts.SystemFonts.CreateFont("Arial", 12);
-
-        _logger.LogInformation("Marking faces...");
-
+        var clonedFrameMat = frameMat.Clone();
         foreach (var face in faces)
         {
-            var color = SixLaborsUtils.GenerateRandomHighlighterColor();
-            var rectangle = new SixLabors.ImageSharp.Drawing.RectangularPolygon((int)face.Box.X, (int)face.Box.Y, (int)face.Box.Width, (int)face.Box.Height);
-
-            clonedImage.Mutate(ctx => ctx.Draw(color, 2, rectangle));
-
-            var confidenceText = $"Confidence: {face.Confidence:F2}";
-            var location = new Vector2(face.Box.X, face.Box.Y - 20);
-
-            clonedImage.Mutate(ctx => ctx.DrawText(confidenceText, font, color, location));
+            var color = GenerateRandomHighlighterColor();
+            CvInvoke.Rectangle(clonedFrameMat, face, color, 1);
         }
 
-        // TODO: Do not clone if type is Rgb24 (which is likely)
-        var converted = clonedImage.CloneAs<T>();
-        clonedImage.Dispose();
+        return clonedFrameMat;
+    }
 
-        return converted;
+    private static readonly Random _defaultRandom = new(DateTime.UtcNow.Microsecond);
+    public static MCvScalar GenerateRandomHighlighterColor(Random? random = null)
+    {
+        random ??= _defaultRandom;
+
+        var baseValue = (byte)random.Next(200, 256);
+        var red = baseValue;
+        var green = (byte)random.Next(150, 256);
+        var blue = (byte)random.Next(0, 100);
+
+        var colors = new byte[] { red, green, blue };
+        colors = colors.OrderBy(c => random.Next()).ToArray();
+
+        return new MCvScalar(colors[0], colors[1], colors[2]);
     }
 }

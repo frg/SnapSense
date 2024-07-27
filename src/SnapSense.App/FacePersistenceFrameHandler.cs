@@ -1,11 +1,9 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using System.Drawing;
+using Emgu.CV;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace SnapSense;
 
@@ -22,26 +20,27 @@ public class FacePersistenceFrameHandler : IFrameHandler
         _hostApplicationLifetime = hostApplicationLifetime;
     }
 
-    public void HandleFrame(Bitmap bitmap)
+    public void HandleFrame(Mat frameMat)
     {
-        using (var image = bitmap.ConvertTo<Rgb24>())
+        var faces = _faceDetector.LocateFaces(frameMat);
+
+        if (faces.Length == 0)
         {
-            if (_faceDetector.HasAnyFace(image))
-            {
-                // TODO: Defer this into another thread to free up resources
-                using (var markedFacesImage = _faceDetector.MarkFaces(image))
-                {
-                    // TODO: Make path configurable
-                    var path = $"photo__{DateTime.Now:yyyyMMdd_HHmmssffff}.jpg";
-                    markedFacesImage.Save(path);
-
-                    _logger.LogInformation("Photo saved at {Path}.", path);
-                }
-
-                _hostApplicationLifetime.StopApplication();
-            }
-
-            _logger.LogDebug("Face not detected which meets criteria.");
+            _logger.LogDebug("No face detected.");
+            return;
         }
+
+        _logger.LogInformation("Found {FacesCount} face(s).", faces.Length);
+        _logger.LogInformation("Marking face(s).");
+
+        var markedMat = _faceDetector.MarkFaces(frameMat, faces);
+
+        // TODO: Make path configurable
+        var path = $"photo__{DateTime.Now:yyyyMMdd_HHmmssffff}.jpg";
+        markedMat.Save(path);
+
+        _logger.LogInformation("Photo saved at {Path}.", path);
+
+        _hostApplicationLifetime.StopApplication();
     }
 }

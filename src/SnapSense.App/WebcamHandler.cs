@@ -33,19 +33,18 @@ public class WebcamHandler : IDisposable
         // Set desired frame width, height, and frame rate
         _capture.Set(CapProp.FrameWidth, 1280);
         _capture.Set(CapProp.FrameHeight, 720);
+        _capture.Set(CapProp.Autofocus, 39);
         _capture.Set(CapProp.Fps, 10);
 
         _capture.ImageGrabbed += (sender, e) =>
         {
-            var frame = new Mat();
-            _capture.Retrieve(frame);
-
-            var bitmap = frame.ToBitmap();
+            var frameMat = new Mat();
+            _capture.Retrieve(frameMat);
 
             // Process the frame using the registered handlers
             Parallel.ForEach(_frameHandlers, handler =>
             {
-                handler.HandleFrame(bitmap);
+                handler.HandleFrame(frameMat);
             });
         };
     }
