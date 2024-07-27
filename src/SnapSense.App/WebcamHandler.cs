@@ -4,16 +4,19 @@
 using System.Drawing;
 using AForge.Video;
 using AForge.Video.DirectShow;
+using Microsoft.Extensions.Logging;
 
 namespace SnapSense;
 
 public class WebcamHandler : IDisposable
 {
+    private readonly ILogger<WebcamHandler> _logger;
     private readonly IEnumerable<IFrameHandler> _frameHandlers;
     private readonly VideoCaptureDevice _videoSource;
 
-    public WebcamHandler(IEnumerable<IFrameHandler> frameHandlers)
+    public WebcamHandler(ILogger<WebcamHandler> logger, IEnumerable<IFrameHandler> frameHandlers)
     {
+        _logger = logger;
         _frameHandlers = frameHandlers;
 
         var videoDevice = TryGetIntegratedWebcam();
@@ -21,11 +24,9 @@ public class WebcamHandler : IDisposable
         _videoSource.NewFrame += OnNewFrame;
     }
 
-    public void Start(CancellationToken cancellationToken)
+    public void Start()
     {
         _videoSource.Start();
-
-        cancellationToken.WaitHandle.WaitOne();
     }
 
     private void OnNewFrame(object sender, NewFrameEventArgs eventArgs)
@@ -37,13 +38,15 @@ public class WebcamHandler : IDisposable
         });
     }
 
-    private static FilterInfo TryGetIntegratedWebcam()
+    private FilterInfo TryGetIntegratedWebcam()
     {
         var videoDevices = new FilterInfoCollection(FilterCategory.VideoInputDevice);
 
         if (videoDevices.Count == 0)
         {
-            Console.WriteLine("No video devices found.");
+            _logger.LogError("No video devices found.");
+
+            // TODO: Handle error gracefully
             throw new Exception("No video devices found.");
         }
 

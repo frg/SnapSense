@@ -3,6 +3,7 @@
 
 using System.Numerics;
 using FaceAiSharp;
+using Microsoft.Extensions.Logging;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
@@ -12,18 +13,26 @@ namespace SnapSense;
 
 public class FaceDetector
 {
+    private readonly ILogger<FaceDetector> _logger;
     private readonly IFaceDetector _detector = FaceAiSharpBundleFactory.CreateFaceDetector();
     private readonly IFaceDetectorWithLandmarks _detectorWithLandmarks = FaceAiSharpBundleFactory.CreateFaceDetectorWithLandmarks();
 
-    public FaceDetector()
+    public FaceDetector(ILogger<FaceDetector> logger)
     {
-
+        _logger = logger;
     }
 
     public bool HasAnyFace(Image<Rgb24> image, float confidenceThreshold = 1.5F)
     {
         var faces = _detector.DetectFaces(image);
-        return faces.Any(result => (result.Confidence ?? 0) > confidenceThreshold);
+        var hasAnyFace = faces.Any(result => (result.Confidence ?? 0) > confidenceThreshold);
+
+        if (hasAnyFace)
+        {
+            _logger.LogInformation("Found at least one face which meets confidence criteria.");
+        }
+
+        return hasAnyFace;
     }
 
     public Image<T> MarkFaces<T>(Image<T> image) where T : unmanaged, IPixel<T>
@@ -31,7 +40,11 @@ public class FaceDetector
         var clonedImage = image.CloneAs<Rgb24>();
         var faces = _detectorWithLandmarks.DetectFaces(clonedImage);
 
+        _logger.LogInformation("Found {FaceCount} faces, with confidence {FaceConfidences} respectively.", faces.Count, faces.Select(x => x.Confidence));
+
         var font = SixLabors.Fonts.SystemFonts.CreateFont("Arial", 12);
+
+        _logger.LogInformation("Marking faces...");
 
         foreach (var face in faces)
         {
