@@ -7,6 +7,6 @@ public class FacePersistenceFrameHandlerOptions
 {
     public const string ConfigurationSection = "FrameHandlers:FacePersistence";
 
-    public string SavePath { get; set; } = "faces";
+    public string SavePath { get; set; } = "faces/photo__{Timestamp:yyyyMMdd_HHmmssffff}.jpg";
     public bool ShouldMarkFaces { get; set; } = true;
 }
