@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Drawing;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
@@ -28,7 +29,7 @@ public class FaceDetector
         );
     }
 
-    public Rectangle[] LocateFaces(Mat frameMat, double confidenceThreshold = 0.95)
+    public IEnumerable<DetectedObject> LocateFaces(Mat frameMat, double confidenceThreshold = 0.95)
     {
         using var grayFrame = new Mat();
         CvInvoke.CvtColor(frameMat, grayFrame, ColorConversion.Bgr2Gray);
@@ -49,7 +50,7 @@ public class FaceDetector
 
         var detection = _dnnFaceDetector.Forward();
 
-        var faces = new List<Rectangle>();
+        var faces = new List<DetectedObject>();
 
         detection = detection.Reshape(1, (int)detection.Total);
 
@@ -63,25 +64,40 @@ public class FaceDetector
             {
                 continue;
             }
-            _logger.LogInformation("" + confidence);
 
             var x1 = (int)(data[i + 3] * frameMat.Cols);
             var y1 = (int)(data[i + 4] * frameMat.Rows);
             var x2 = (int)(data[i + 5] * frameMat.Cols);
             var y2 = (int)(data[i + 6] * frameMat.Rows);
-            faces.Add(new Rectangle(x1, y1, x2 - x1, y2 - y1));
+            faces.Add(new DetectedObject(new Rectangle(x1, y1, x2 - x1, y2 - y1), confidence));
         }
 
-        return faces.ToArray();
+        return faces;
     }
 
-    public Mat MarkFaces(Mat frameMat, Rectangle[] faces)
+    public Mat MarkFaces(Mat frameMat, IEnumerable<DetectedObject> faces)
     {
         var clonedFrameMat = frameMat.Clone();
         foreach (var face in faces)
         {
             var color = GenerateRandomHighlighterColor();
-            CvInvoke.Rectangle(clonedFrameMat, face, color, 1);
+            CvInvoke.Rectangle(clonedFrameMat, face.Position, color, 1);
+
+            // Draw the confidence level text
+            var text = $"Confidence: {face.Confidence.ToString("0.00", CultureInfo.InvariantCulture)}";
+            var point = new Point(face.Position.X, face.Position.Y - 10); // Position above the rectangle
+            const FontFace textFont = FontFace.HersheySimplex;
+            const double textFontSize = 0.4;
+            const int textFontThickness = 1;
+            var baseline = 0;
+            var textSize = CvInvoke.GetTextSize(text, textFont, textFontSize, textFontThickness, ref baseline);
+            var textBackground = new Rectangle(point.X, point.Y - textSize.Height, textSize.Width, textSize.Height + baseline);
+
+            // Draw text background for better legibility
+            CvInvoke.Rectangle(clonedFrameMat, textBackground, new MCvScalar(75, 75, 75), -1);
+
+            // Draw the text
+            CvInvoke.PutText(clonedFrameMat, text, point, textFont, textFontSize, new MCvScalar(255, 255, 255), textFontThickness);
         }
 
         return clonedFrameMat;

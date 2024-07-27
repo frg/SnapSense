@@ -24,7 +24,7 @@ public class FacePersistenceFrameHandler : IFrameHandler
 
     public void HandleFrame(Mat frameMat)
     {
-        // Try to enter the semaphore. If it's already taken, return immediately.
+        // Try to enter the lock. If it's already taken, return immediately.
         if (!_semaphore.Wait(0))
         {
             _logger.LogDebug("Frame handling is already in progress. Skipping this frame.");
@@ -33,15 +33,15 @@ public class FacePersistenceFrameHandler : IFrameHandler
 
         try
         {
-            var faces = _faceDetector.LocateFaces(frameMat);
+            var faces = _faceDetector.LocateFaces(frameMat).ToList();
 
-            if (faces.Length == 0)
+            if (faces.Count == 0)
             {
                 _logger.LogDebug("No face detected.");
                 return;
             }
 
-            _logger.LogInformation("Found {FacesCount} face(s).", faces.Length);
+            _logger.LogInformation("Found {FacesCount} face(s).", faces.Count);
             // TODO: Defer this to free up handler
             _logger.LogInformation("Marking face(s).");
 
@@ -54,11 +54,11 @@ public class FacePersistenceFrameHandler : IFrameHandler
                 _logger.LogInformation("Photo saved at {Path}.", path);
             }
 
-            // _hostApplicationLifetime.StopApplication();
+            _hostApplicationLifetime.StopApplication();
         }
         finally
         {
-            // Release the semaphore so that the next frame can be handled.
+            // Release the lock so that the next frame can be handled.
             _semaphore.Release();
         }
     }
