@@ -12,8 +12,7 @@ namespace SnapSense;
 public class FaceDetector
 {
     private readonly ILogger<FaceDetector> _logger;
-
-    private CascadeClassifier _faceCascade;
+    private readonly CascadeClassifier _faceCascade;
 
     public FaceDetector(ILogger<FaceDetector> logger)
     {
@@ -43,7 +42,8 @@ public class FaceDetector
     }
 
     private static readonly Random _defaultRandom = new(DateTime.UtcNow.Microsecond);
-    public static MCvScalar GenerateRandomHighlighterColor(Random? random = null)
+
+    private static MCvScalar GenerateRandomHighlighterColor(Random? random = null)
     {
         random ??= _defaultRandom;
 
@@ -52,7 +52,7 @@ public class FaceDetector
         var green = (byte)random.Next(150, 256);
         var blue = (byte)random.Next(0, 100);
 
-        var colors = new byte[] { red, green, blue };
+        var colors = new[] { red, green, blue };
         colors = colors.OrderBy(c => random.Next()).ToArray();
 
         return new MCvScalar(colors[0], colors[1], colors[2]);
