@@ -13,6 +13,8 @@ public class FacePersistenceFrameHandler : IFrameHandler
     private readonly FaceDetector _faceDetector;
     private readonly IHostApplicationLifetime _hostApplicationLifetime;
 
+    private readonly SemaphoreSlim _semaphore = new(1, 1);
+
     public FacePersistenceFrameHandler(ILogger<FacePersistenceFrameHandler> logger, FaceDetector faceDetector, IHostApplicationLifetime hostApplicationLifetime)
     {
         _logger = logger;
@@ -22,16 +24,26 @@ public class FacePersistenceFrameHandler : IFrameHandler
 
     public void HandleFrame(Mat frameMat)
     {
-        var faces = _faceDetector.LocateFaces(frameMat);
-
-        if (faces.Length == 0)
+        // Try to enter the semaphore. If it's already taken, return immediately.
+        if (!_semaphore.Wait(0))
         {
-            _logger.LogDebug("No face detected.");
+            _logger.LogDebug("Frame handling is already in progress. Skipping this frame.");
             return;
         }
 
-        _logger.LogInformation("Found {FacesCount} face(s).", faces.Length);
-        _logger.LogInformation("Marking face(s).");
+        try
+        {
+            var faces = _faceDetector.LocateFaces(frameMat);
+
+            if (faces.Length == 0)
+            {
+                _logger.LogDebug("No face detected.");
+                return;
+            }
+
+            _logger.LogInformation("Found {FacesCount} face(s).", faces.Length);
+            // TODO: Defer this to free up handler
+            _logger.LogInformation("Marking face(s).");
 
             using (var markedMat = _faceDetector.MarkFaces(frameMat, faces))
             {
@@ -42,6 +54,12 @@ public class FacePersistenceFrameHandler : IFrameHandler
                 _logger.LogInformation("Photo saved at {Path}.", path);
             }
 
-        _hostApplicationLifetime.StopApplication();
+            _hostApplicationLifetime.StopApplication();
+        }
+        finally
+        {
+            // Release the semaphore so that the next frame can be handled.
+            _semaphore.Release();
+        }
     }
 }
