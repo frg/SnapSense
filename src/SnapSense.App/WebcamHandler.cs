@@ -34,19 +34,19 @@ public class WebcamHandler : IDisposable
         _capture.Set(CapProp.FrameWidth, 1280);
         _capture.Set(CapProp.FrameHeight, 720);
         _capture.Set(CapProp.Autofocus, 39);
-        _capture.Set(CapProp.Fps, 10);
+        _capture.Set(CapProp.Fps, 1);
 
-        _capture.ImageGrabbed += (sender, e) =>
-        {
-            var frameMat = new Mat();
-            _capture.Retrieve(frameMat);
+        _capture.ImageGrabbed += HandleOnImageGrabbed;
+    }
 
-            // Process the frame using the registered handlers
-            Parallel.ForEach(_frameHandlers, handler =>
-            {
-                handler.HandleFrame(frameMat);
-            });
-        };
+    private void HandleOnImageGrabbed(object? sender, EventArgs e)
+    {
+        using var frameMat = new Mat();
+        var capture = (VideoCapture)sender!;
+        capture.Retrieve(frameMat);
+
+        // Process the frame using the registered handlers
+        Parallel.ForEach(_frameHandlers, handler => { handler.HandleFrame(frameMat); });
     }
 
     public void Start()
@@ -75,6 +75,8 @@ public class WebcamHandler : IDisposable
 
     public void Dispose()
     {
+        StopCapture();
+        _capture.ImageGrabbed -= HandleOnImageGrabbed;
         _capture.Dispose();
     }
 }
