@@ -23,8 +23,6 @@ public class WebcamHostedService : IHostedService
 
         _webcamHandler.Start();
 
-        cancellationToken.WaitHandle.WaitOne();
-
         return Task.CompletedTask;
     }
 
