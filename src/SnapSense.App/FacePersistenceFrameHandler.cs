@@ -45,6 +45,7 @@ public class FacePersistenceFrameHandler : IFrameHandler
             // TODO: Defer this to free up handler
             _logger.LogInformation("Marking face(s).");
 
+            // TODO: Only mark when app is in debug mode
             using (var markedMat = _faceDetector.MarkFaces(frameMat, faces))
             {
                 // TODO: Make path configurable
