@@ -4,6 +4,7 @@
 using Emgu.CV;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace SnapSense;
 
@@ -14,16 +15,28 @@ public class FacePersistenceFrameHandler : IFrameHandler
     private readonly IHostApplicationLifetime _hostApplicationLifetime;
 
     private readonly SemaphoreSlim _semaphore = new(1, 1);
+    private readonly FacePersistenceFrameHandlerOptions _options;
 
-    public FacePersistenceFrameHandler(ILogger<FacePersistenceFrameHandler> logger, FaceDetector faceDetector, IHostApplicationLifetime hostApplicationLifetime)
+    public FacePersistenceFrameHandler(
+        ILogger<FacePersistenceFrameHandler> logger,
+        IOptions<FacePersistenceFrameHandlerOptions> options,
+        FaceDetector faceDetector,
+        IHostApplicationLifetime hostApplicationLifetime)
     {
         _logger = logger;
+        _options = options.Value;
         _faceDetector = faceDetector;
         _hostApplicationLifetime = hostApplicationLifetime;
     }
 
     public void HandleFrame(Mat frameMat)
     {
+        // TODO: Stop using HostApplicationLifetime
+        if (_hostApplicationLifetime.ApplicationStopping.IsCancellationRequested)
+        {
+            return;
+        }
+
         // Try to enter the lock. If it's already taken, return immediately.
         if (!_semaphore.Wait(0))
         {
@@ -45,12 +58,22 @@ public class FacePersistenceFrameHandler : IFrameHandler
             // TODO: Defer this to free up handler
             _logger.LogInformation("Marking face(s).");
 
-            // TODO: Only mark when app is in debug mode
-            using (var markedMat = _faceDetector.MarkFaces(frameMat, faces))
+            if (_options.IsDebug)
+            {
+                using (var markedMat = _faceDetector.MarkFaces(frameMat, faces))
+                {
+                    // TODO: Make path configurable
+                    var path = $"photo__{DateTime.Now:yyyyMMdd_HHmmssffff}.jpg";
+                    markedMat.Save(path);
+
+                    _logger.LogInformation("Photo saved at {Path}.", path);
+                }
+            }
+            else
             {
                 // TODO: Make path configurable
                 var path = $"photo__{DateTime.Now:yyyyMMdd_HHmmssffff}.jpg";
-                markedMat.Save(path);
+                frameMat.Save(path);
 
                 _logger.LogInformation("Photo saved at {Path}.", path);
             }
