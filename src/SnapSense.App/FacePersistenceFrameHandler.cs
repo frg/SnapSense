@@ -58,7 +58,7 @@ public class FacePersistenceFrameHandler : IFrameHandler
             // TODO: Defer this to free up handler
             _logger.LogInformation("Marking face(s).");
 
-            if (_options.IsDebug)
+            if (_options.ShouldMarkFaces)
             {
                 using (var markedMat = _faceDetector.MarkFaces(frameMat, faces))
                 {

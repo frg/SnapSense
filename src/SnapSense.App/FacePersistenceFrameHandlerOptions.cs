@@ -8,5 +8,5 @@ public class FacePersistenceFrameHandlerOptions
     public const string ConfigurationSection = "FrameHandlers:FacePersistence";
 
     public string SavePath { get; set; } = "faces";
-    public bool IsDebug { get; set; } = true;
+    public bool ShouldMarkFaces { get; set; } = true;
 }
