@@ -22,7 +22,7 @@ public class FaceDetector
         _logger = logger;
     }
 
-    public bool HasAnyFace(Image<Rgb24> image, float confidenceThreshold = 1.5F)
+    public bool HasAnyFace(Image<Rgb24> image, float confidenceThreshold = 1.45F)
     {
         var faces = _detector.DetectFaces(image);
         var hasAnyFace = faces.Any(result => (result.Confidence ?? 0) > confidenceThreshold);
