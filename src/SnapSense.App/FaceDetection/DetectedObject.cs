@@ -3,6 +3,6 @@
 
 using System.Drawing;
 
-namespace SnapSense;
+namespace SnapSense.FaceDetection;
 
 public record DetectedObject(Rectangle Position, double Confidence);

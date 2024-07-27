@@ -3,7 +3,7 @@
 
 using Emgu.CV;
 
-namespace SnapSense;
+namespace SnapSense.FrameHandlers;
 
 public interface IFrameHandler
 {

@@ -11,7 +11,7 @@ using Emgu.CV.Structure;
 using Microsoft.Extensions.Logging;
 using Rectangle = System.Drawing.Rectangle;
 
-namespace SnapSense;
+namespace SnapSense.FaceDetection;
 
 public class FaceDetector
 {

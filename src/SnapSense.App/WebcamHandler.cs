@@ -4,6 +4,7 @@
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Microsoft.Extensions.Logging;
+using SnapSense.FrameHandlers;
 
 namespace SnapSense;
 

@@ -5,8 +5,9 @@ using Emgu.CV;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using SnapSense.FaceDetection;
 
-namespace SnapSense;
+namespace SnapSense.FrameHandlers;
 
 public class FacePersistenceFrameHandler : IFrameHandler
 {
@@ -63,10 +64,8 @@ public class FacePersistenceFrameHandler : IFrameHandler
 
             if (_options.ShouldMarkFaces)
             {
-                using (var markedFrameMat = _faceDetector.MarkFaces(frameMat, faces))
-                {
-                    _persistenceHandler.Save(markedFrameMat, _options.SavePath);
-                }
+                using var markedFrameMat = _faceDetector.MarkFaces(frameMat, faces);
+                _persistenceHandler.Save(markedFrameMat, _options.SavePath);
             }
             else
             {

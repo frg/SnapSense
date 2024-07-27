@@ -2,6 +2,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using SnapSense.FaceDetection;
+using SnapSense.FrameHandlers;
 
 namespace SnapSense;
 
