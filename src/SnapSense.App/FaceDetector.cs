@@ -1,8 +1,11 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+using System.Drawing;
+using System.Runtime.InteropServices;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
+using Emgu.CV.Dnn;
 using Emgu.CV.Structure;
 using Microsoft.Extensions.Logging;
 using Rectangle = System.Drawing.Rectangle;
@@ -12,21 +15,64 @@ namespace SnapSense;
 public class FaceDetector
 {
     private readonly ILogger<FaceDetector> _logger;
-    private readonly CascadeClassifier _faceCascade;
+    private readonly Net _dnnFaceDetector;
+
+    private static readonly Random _defaultRandom = new(DateTime.UtcNow.Microsecond);
 
     public FaceDetector(ILogger<FaceDetector> logger)
     {
         _logger = logger;
-        _faceCascade = new CascadeClassifier("opencv/data/haarcascades/haarcascade_frontalface_default.xml");
+        _dnnFaceDetector = DnnInvoke.ReadNetFromCaffe(
+            "opencv/data/dnn/deploy.prototxt",
+            "opencv/data/dnn/res10_300x300_ssd_iter_140000_fp16.caffemodel"
+        );
     }
 
-    public Rectangle[] LocateFaces(Mat frameMat)
+    public Rectangle[] LocateFaces(Mat frameMat, double confidenceThreshold = 0.95)
     {
         using var grayFrame = new Mat();
         CvInvoke.CvtColor(frameMat, grayFrame, ColorConversion.Bgr2Gray);
-        var faces = _faceCascade.DetectMultiScale(grayFrame, 1.1, 10, System.Drawing.Size.Empty);
+        CvInvoke.EqualizeHist(grayFrame, grayFrame);
 
-        return faces;
+        using (var blob = DnnInvoke.BlobFromImage(frameMat,
+                   1.0,
+                   new Size(300,
+                       300),
+                   new MCvScalar(104.0,
+                       177.0,
+                       123.0),
+                   false,
+                   false))
+        {
+            _dnnFaceDetector.SetInput(blob);
+        }
+
+        var detection = _dnnFaceDetector.Forward();
+
+        var faces = new List<Rectangle>();
+
+        detection = detection.Reshape(1, (int)detection.Total);
+
+        var data = new float[detection.Total];
+        Marshal.Copy(detection.DataPointer, data, 0, data.Length);
+
+        for (var i = 0; i < data.Length; i += 7)
+        {
+            var confidence = data[i + 2];
+            if (!(confidence > confidenceThreshold))
+            {
+                continue;
+            }
+            _logger.LogInformation("" + confidence);
+
+            var x1 = (int)(data[i + 3] * frameMat.Cols);
+            var y1 = (int)(data[i + 4] * frameMat.Rows);
+            var x2 = (int)(data[i + 5] * frameMat.Cols);
+            var y2 = (int)(data[i + 6] * frameMat.Rows);
+            faces.Add(new Rectangle(x1, y1, x2 - x1, y2 - y1));
+        }
+
+        return faces.ToArray();
     }
 
     public Mat MarkFaces(Mat frameMat, Rectangle[] faces)
@@ -40,8 +86,6 @@ public class FaceDetector
 
         return clonedFrameMat;
     }
-
-    private static readonly Random _defaultRandom = new(DateTime.UtcNow.Microsecond);
 
     private static MCvScalar GenerateRandomHighlighterColor(Random? random = null)
     {

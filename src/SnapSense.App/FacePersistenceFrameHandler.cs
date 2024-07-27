@@ -54,7 +54,7 @@ public class FacePersistenceFrameHandler : IFrameHandler
                 _logger.LogInformation("Photo saved at {Path}.", path);
             }
 
-            _hostApplicationLifetime.StopApplication();
+            // _hostApplicationLifetime.StopApplication();
         }
         finally
         {
